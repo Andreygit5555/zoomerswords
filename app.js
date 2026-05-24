@@ -70,6 +70,7 @@
 
   function requestTelegramFullscreen() {
     if (!tg || typeof tg.requestFullscreen !== "function") return;
+    if (typeof tg.isVersionAtLeast === "function" && !tg.isVersionAtLeast("8.0")) return;
     try {
       tg.requestFullscreen();
     } catch (error) {

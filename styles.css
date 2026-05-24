@@ -541,6 +541,186 @@ svg {
   }
 }
 
+@media (max-height: 760px) and (max-width: 560px) {
+  :root {
+    --cell: clamp(19px, calc((100vw - 154px) / 11), 30px);
+    --gap: 2px;
+  }
+
+  .app-shell {
+    padding: calc(8px + env(safe-area-inset-top)) 12px calc(8px + env(safe-area-inset-bottom));
+    gap: 6px;
+  }
+
+  .app-label {
+    display: none;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  .icon-button {
+    flex-basis: 38px;
+    width: 38px;
+    min-height: 38px;
+  }
+
+  .icon-button svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .status-strip {
+    gap: 6px;
+  }
+
+  .status-strip > div {
+    padding: 6px 8px 5px;
+  }
+
+  .status-value {
+    font-size: 18px;
+  }
+
+  .status-label {
+    margin-top: 2px;
+    font-size: 10px;
+  }
+
+  .board-wrap {
+    padding: 6px;
+  }
+
+  .cell {
+    border-radius: 6px;
+  }
+
+  .cell.letter {
+    font-size: clamp(13px, 4.5vw, 18px);
+  }
+
+  .cell.clue {
+    padding: 3px;
+  }
+
+  .clue-number {
+    font-size: 9px;
+  }
+
+  .clue-arrow {
+    right: 3px;
+    bottom: 2px;
+    font-size: 14px;
+  }
+
+  .clue-panel {
+    padding: 9px;
+  }
+
+  .clue-meta {
+    gap: 5px;
+    margin-bottom: 7px;
+  }
+
+  .clue-meta span {
+    min-height: 21px;
+    padding: 3px 7px;
+    font-size: 11px;
+  }
+
+  .answer-preview {
+    gap: 4px;
+    margin-bottom: 7px;
+  }
+
+  .answer-slot {
+    height: 27px;
+    border-radius: 7px;
+    font-size: 15px;
+  }
+
+  #clueText {
+    min-height: 28px;
+    max-height: 40px;
+    overflow: hidden;
+    font-size: 15px;
+    line-height: 1.28;
+  }
+
+  .clue-actions {
+    gap: 7px;
+    margin-top: 8px;
+  }
+
+  .primary-button,
+  .secondary-button {
+    min-height: 36px;
+    font-size: 14px;
+  }
+
+  .keyboard {
+    gap: 4px;
+  }
+
+  .key-row {
+    gap: 4px;
+  }
+
+  .key {
+    min-height: 30px;
+    border-radius: 7px;
+    font-size: 13px;
+  }
+
+  .key.backspace-key svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+@media (max-height: 650px) and (max-width: 560px) {
+  :root {
+    --cell: clamp(18px, calc((100vw - 174px) / 11), 28px);
+  }
+
+  .app-shell {
+    gap: 5px;
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+
+  .status-strip > div {
+    padding: 5px 7px 4px;
+  }
+
+  .status-value {
+    font-size: 17px;
+  }
+
+  .clue-panel {
+    padding: 8px;
+  }
+
+  #clueText {
+    min-height: 22px;
+    max-height: 24px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .primary-button,
+  .secondary-button {
+    min-height: 34px;
+  }
+
+  .key {
+    min-height: 28px;
+  }
+}
+
 @media (min-width: 560px) {
   .app-shell {
     padding-left: 18px;
