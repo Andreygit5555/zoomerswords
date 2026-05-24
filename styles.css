@@ -403,6 +403,16 @@ svg {
   font-size: 14px;
 }
 
+.key.backspace-key {
+  color: #24324a;
+}
+
+.key.backspace-key svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 2;
+}
+
 .key.accent {
   background: #1f8b65;
   border-color: #1f8b65;

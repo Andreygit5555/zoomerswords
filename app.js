@@ -65,11 +65,15 @@
 
   function buildKeyboard() {
     keyboard.innerHTML = "";
-    const rows = ["ЙЦУКЕНГШЩЗХ", "ФЫВАПРОЛДЖЭ", "ЯЧСМИТЬБЮ"];
-    rows.forEach((letters) => {
+    const rows = [
+      { letters: "ЙЦУКЕНГШЩЗХ" },
+      { letters: "ФЫВАПРОЛДЖЭ" },
+      { letters: "ЯЧСМИТЬБЮ", backspace: true },
+    ];
+    rows.forEach(({ letters, backspace }) => {
       const row = document.createElement("div");
       row.className = "key-row";
-      row.style.setProperty("--cols", letters.length);
+      row.style.setProperty("--cols", letters.length + (backspace ? 1 : 0));
       letters.split("").forEach((letter) => {
         const button = document.createElement("button");
         button.type = "button";
@@ -78,19 +82,13 @@
         button.addEventListener("click", () => enterLetter(letter));
         row.appendChild(button);
       });
+      if (backspace) row.appendChild(createBackspaceKey());
       keyboard.appendChild(row);
     });
 
     const actions = document.createElement("div");
     actions.className = "key-row";
-    actions.style.setProperty("--cols", 2);
-
-    const backspace = document.createElement("button");
-    backspace.type = "button";
-    backspace.className = "key wide";
-    backspace.textContent = "стереть";
-    backspace.addEventListener("click", eraseLetter);
-    actions.appendChild(backspace);
+    actions.style.setProperty("--cols", 1);
 
     const check = document.createElement("button");
     check.type = "button";
@@ -99,6 +97,23 @@
     check.addEventListener("click", checkPuzzle);
     actions.appendChild(check);
     keyboard.appendChild(actions);
+  }
+
+  function createBackspaceKey() {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "key backspace-key";
+    button.setAttribute("aria-label", "Стереть");
+    button.title = "Стереть";
+    button.innerHTML = `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M21 5H9l-6 7 6 7h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z" />
+        <path d="m12 9 6 6" />
+        <path d="m18 9-6 6" />
+      </svg>
+    `;
+    button.addEventListener("click", eraseLetter);
+    return button;
   }
 
   function startNewGame() {
@@ -379,9 +394,19 @@
   }
 
   function eraseLetter() {
-    if (!state.selectedCellKey) return;
-    delete state.entries[state.selectedCellKey];
-    state.checkedCells.delete(state.selectedCellKey);
+    const clue = getActiveClue();
+    if (!clue || !state.selectedCellKey) return;
+
+    const currentIndex = clue.cells.findIndex((cell) => cellKey(cell) === state.selectedCellKey);
+    if (currentIndex < 0) return;
+
+    const currentKey = state.selectedCellKey;
+    const deleteIndex = state.entries[currentKey] ? currentIndex : Math.max(0, currentIndex - 1);
+    const deleteKey = cellKey(clue.cells[deleteIndex]);
+
+    delete state.entries[deleteKey];
+    state.checkedCells.delete(deleteKey);
+    state.selectedCellKey = deleteKey;
     render();
   }
 
