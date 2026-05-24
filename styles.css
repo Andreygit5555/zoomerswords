@@ -51,7 +51,7 @@ button {
 
 .app-shell {
   width: min(100%, 500px);
-  min-height: 100svh;
+  min-height: var(--tg-viewport-height, 100svh);
   margin: 0 auto;
   padding: calc(12px + env(safe-area-inset-top)) 14px calc(12px + env(safe-area-inset-bottom));
   display: flex;

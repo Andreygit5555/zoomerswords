@@ -3,6 +3,7 @@
   if (tg) {
     tg.ready();
     tg.expand();
+    requestTelegramFullscreen();
     if (tg.themeParams) {
       const root = document.documentElement;
       if (tg.themeParams.bg_color) root.style.setProperty("--tg-bg", tg.themeParams.bg_color);
@@ -13,6 +14,8 @@
         root.style.setProperty("--tg-button-text", tg.themeParams.button_text_color);
       }
     }
+    syncTelegramViewport();
+    tg.onEvent && tg.onEvent("viewportChanged", syncTelegramViewport);
   }
 
   const SIZE = 11;
@@ -64,6 +67,20 @@
 
   buildKeyboard();
   startNewGame();
+
+  function requestTelegramFullscreen() {
+    if (!tg || typeof tg.requestFullscreen !== "function") return;
+    try {
+      tg.requestFullscreen();
+    } catch (error) {
+      console.info("Telegram fullscreen is not available here", error);
+    }
+  }
+
+  function syncTelegramViewport() {
+    if (!tg || !tg.viewportStableHeight) return;
+    document.documentElement.style.setProperty("--tg-viewport-height", `${tg.viewportStableHeight}px`);
+  }
 
   function normalizeAnswer(value) {
     return String(value || "")
