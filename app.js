@@ -42,6 +42,8 @@
   const clueNumber = document.getElementById("clueNumber");
   const clueDirection = document.getElementById("clueDirection");
   const clueLength = document.getElementById("clueLength");
+  const clueCategory = document.getElementById("clueCategory");
+  const answerPreview = document.getElementById("answerPreview");
   const clueText = document.getElementById("clueText");
   const toast = document.getElementById("toast");
 
@@ -63,28 +65,40 @@
 
   function buildKeyboard() {
     keyboard.innerHTML = "";
-    LETTERS.forEach((letter) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "key";
-      button.textContent = letter;
-      button.addEventListener("click", () => enterLetter(letter));
-      keyboard.appendChild(button);
+    const rows = ["ЙЦУКЕНГШЩЗХ", "ФЫВАПРОЛДЖЭ", "ЯЧСМИТЬБЮ"];
+    rows.forEach((letters) => {
+      const row = document.createElement("div");
+      row.className = "key-row";
+      row.style.setProperty("--cols", letters.length);
+      letters.split("").forEach((letter) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "key";
+        button.textContent = letter;
+        button.addEventListener("click", () => enterLetter(letter));
+        row.appendChild(button);
+      });
+      keyboard.appendChild(row);
     });
+
+    const actions = document.createElement("div");
+    actions.className = "key-row";
+    actions.style.setProperty("--cols", 2);
 
     const backspace = document.createElement("button");
     backspace.type = "button";
     backspace.className = "key wide";
     backspace.textContent = "стереть";
     backspace.addEventListener("click", eraseLetter);
-    keyboard.appendChild(backspace);
+    actions.appendChild(backspace);
 
     const check = document.createElement("button");
     check.type = "button";
     check.className = "key wide accent";
     check.textContent = "готово";
     check.addEventListener("click", checkPuzzle);
-    keyboard.appendChild(check);
+    actions.appendChild(check);
+    keyboard.appendChild(actions);
   }
 
   function startNewGame() {
@@ -92,6 +106,7 @@
     state.entries = {};
     state.checkedCells = new Map();
     state.mistakes = 0;
+    state.completed = false;
     state.selectedClueId = state.puzzle.clues[0].id;
     state.selectedCellKey = cellKey(state.puzzle.clues[0].cells[0]);
     totalCount.textContent = String(state.puzzle.clues.length);
@@ -270,6 +285,7 @@
         if (cell.type === "letter") {
           const key = `${rowIndex}:${colIndex}`;
           el.textContent = state.entries[key] || "";
+          if (state.entries[key]) el.classList.add("filled");
           if (key === state.selectedCellKey) el.classList.add("active");
           if (activeKeys.has(key)) el.classList.add("path");
           if (state.checkedCells.get(key) === "correct") el.classList.add("correct");
@@ -278,6 +294,7 @@
         } else if (cell.type === "clue") {
           const clue = state.puzzle.clues.find((item) => item.id === cell.clueId);
           el.classList.toggle("selected", cell.clueId === state.selectedClueId);
+          el.classList.toggle("solved", isClueSolved(clue));
           el.innerHTML = `<span class="clue-number">${clue.number}</span><span class="clue-arrow">${cell.direction === "across" ? "→" : "↓"}</span>`;
           el.addEventListener("click", () => selectClue(cell.clueId));
         } else {
@@ -296,7 +313,9 @@
     clueNumber.textContent = String(clue.number);
     clueDirection.textContent = clue.direction === "across" ? "вправо" : "вниз";
     clueLength.textContent = formatLetters(clue.answer.length);
-    clueText.textContent = `${clue.definition} · ${clue.category}`;
+    clueCategory.textContent = clue.category;
+    clueText.textContent = clue.definition;
+    renderAnswerPreview(clue);
   }
 
   function updateStatus() {
@@ -304,10 +323,26 @@
     solvedCount.textContent = String(solved);
     mistakesCount.textContent = String(state.mistakes);
 
-    if (solved === state.puzzle.clues.length) {
+    if (!state.completed && solved === state.puzzle.clues.length) {
+      state.completed = true;
       showToast("Готово, сетка решена");
-    haptic("notification", "success");
+      haptic("notification", "success");
     }
+  }
+
+  function renderAnswerPreview(clue) {
+    answerPreview.innerHTML = "";
+    clue.cells.forEach((cell) => {
+      const key = cellKey(cell);
+      const slot = document.createElement("button");
+      slot.type = "button";
+      slot.className = "answer-slot";
+      slot.textContent = state.entries[key] || "";
+      slot.classList.toggle("active", key === state.selectedCellKey);
+      slot.classList.toggle("correct", state.entries[key] === state.puzzle.grid[cell.row][cell.col].letter);
+      slot.addEventListener("click", () => selectCell(cell.row, cell.col));
+      answerPreview.appendChild(slot);
+    });
   }
 
   function selectClue(clueId) {
