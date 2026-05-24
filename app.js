@@ -59,7 +59,6 @@
   const completionText = document.getElementById("completionText");
   const toast = document.getElementById("toast");
 
-  document.getElementById("newGameButton").addEventListener("click", startNewGame);
   document.getElementById("checkButton").addEventListener("click", checkPuzzle);
   hintButton.addEventListener("click", revealLetter);
   document.getElementById("nextPuzzleButton").addEventListener("click", () => startNewGame({ nextLevel: true }));
