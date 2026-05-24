@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f172a" />
+    <title>Зумер-сканворд</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2314213d'/%3E%3Cpath d='M16 22h32M16 32h32M16 42h22' stroke='%23fff' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  </head>
+  <body>
+    <main class="app-shell" id="app">
+      <header class="topbar">
+        <div>
+          <p class="app-label">мини-сканворд</p>
+          <h1>Зумерские слова</h1>
+        </div>
+        <button class="icon-button" id="newGameButton" type="button" aria-label="Новая сетка" title="Новая сетка">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 6v5h-5" />
+            <path d="M4 18v-5h5" />
+            <path d="M6.3 8.7A7.5 7.5 0 0 1 18.5 6" />
+            <path d="M17.7 15.3A7.5 7.5 0 0 1 5.5 18" />
+          </svg>
+        </button>
+      </header>
+
+      <section class="status-strip" aria-label="Статус игры">
+        <div>
+          <span class="status-value" id="solvedCount">0</span>
+          <span class="status-label">решено</span>
+        </div>
+        <div>
+          <span class="status-value" id="totalCount">0</span>
+          <span class="status-label">слов</span>
+        </div>
+        <div>
+          <span class="status-value" id="mistakesCount">0</span>
+          <span class="status-label">ошибок</span>
+        </div>
+      </section>
+
+      <section class="board-wrap" aria-label="Игровое поле">
+        <div class="board" id="board"></div>
+      </section>
+
+      <section class="clue-panel" aria-live="polite">
+        <div class="clue-meta">
+          <span id="clueNumber">1</span>
+          <span id="clueDirection">вправо</span>
+          <span id="clueLength">4 буквы</span>
+        </div>
+        <p id="clueText">Выберите подсказку на поле.</p>
+        <div class="clue-actions">
+          <button class="secondary-button" id="hintButton" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 18h6" />
+              <path d="M10 22h4" />
+              <path d="M8.2 14.5a6 6 0 1 1 7.6 0c-.9.7-1.3 1.5-1.3 2.5h-5c0-1-.4-1.8-1.3-2.5Z" />
+            </svg>
+            Буква
+          </button>
+          <button class="primary-button" id="checkButton" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+            Проверить
+          </button>
+        </div>
+      </section>
+
+      <section class="keyboard" id="keyboard" aria-label="Клавиатура"></section>
+
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </main>
+
+    <script src="./slang-data.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
