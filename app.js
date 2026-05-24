@@ -17,6 +17,9 @@
 
   const SIZE = 11;
   const MAX_WORDS = 7;
+  const START_HINTS = 20;
+  const HINT_STEP = 2;
+  const MIN_HINTS = 4;
   const LETTERS = "ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ".split("");
   const data = (window.ZOOMER_WORDS || [])
     .map((item) => ({
@@ -31,25 +34,32 @@
     selectedCellKey: null,
     entries: {},
     checkedCells: new Map(),
+    level: 1,
+    hintsRemaining: START_HINTS,
     mistakes: 0,
   };
 
   const board = document.getElementById("board");
   const keyboard = document.getElementById("keyboard");
+  const levelCount = document.getElementById("levelCount");
   const solvedCount = document.getElementById("solvedCount");
-  const totalCount = document.getElementById("totalCount");
-  const mistakesCount = document.getElementById("mistakesCount");
+  const hintsCount = document.getElementById("hintsCount");
   const clueNumber = document.getElementById("clueNumber");
   const clueDirection = document.getElementById("clueDirection");
   const clueLength = document.getElementById("clueLength");
   const clueCategory = document.getElementById("clueCategory");
   const answerPreview = document.getElementById("answerPreview");
   const clueText = document.getElementById("clueText");
+  const hintButton = document.getElementById("hintButton");
+  const completion = document.getElementById("completion");
+  const completionLevel = document.getElementById("completionLevel");
+  const completionText = document.getElementById("completionText");
   const toast = document.getElementById("toast");
 
   document.getElementById("newGameButton").addEventListener("click", startNewGame);
   document.getElementById("checkButton").addEventListener("click", checkPuzzle);
-  document.getElementById("hintButton").addEventListener("click", revealLetter);
+  hintButton.addEventListener("click", revealLetter);
+  document.getElementById("nextPuzzleButton").addEventListener("click", () => startNewGame({ nextLevel: true }));
   document.addEventListener("keydown", onHardwareKey);
 
   buildKeyboard();
@@ -116,17 +126,19 @@
     return button;
   }
 
-  function startNewGame() {
+  function startNewGame(options = {}) {
+    if (options.nextLevel) state.level += 1;
     state.puzzle = createPuzzle();
     state.entries = {};
     state.checkedCells = new Map();
+    state.hintsRemaining = getHintLimit(state.level);
     state.mistakes = 0;
     state.completed = false;
     state.selectedClueId = state.puzzle.clues[0].id;
     state.selectedCellKey = cellKey(state.puzzle.clues[0].cells[0]);
-    totalCount.textContent = String(state.puzzle.clues.length);
+    hideCompletion();
     render();
-    showToast("Новая сетка готова");
+    showToast(options.nextLevel ? `Уровень ${state.level}` : "Новая сетка готова");
   }
 
   function createPuzzle() {
@@ -335,14 +347,34 @@
 
   function updateStatus() {
     const solved = state.puzzle.clues.filter(isClueSolved).length;
-    solvedCount.textContent = String(solved);
-    mistakesCount.textContent = String(state.mistakes);
+    levelCount.textContent = String(state.level);
+    solvedCount.textContent = `${solved}/${state.puzzle.clues.length}`;
+    hintsCount.textContent = String(state.hintsRemaining);
+    hintButton.disabled = state.hintsRemaining <= 0;
 
     if (!state.completed && solved === state.puzzle.clues.length) {
       state.completed = true;
-      showToast("Готово, сетка решена");
+      showCompletion();
       haptic("notification", "success");
     }
+  }
+
+  function getHintLimit(level) {
+    return Math.max(MIN_HINTS, START_HINTS - (level - 1) * HINT_STEP);
+  }
+
+  function showCompletion() {
+    completionLevel.textContent = `Уровень ${state.level}`;
+    completionText.textContent =
+      state.level === 1
+        ? "Все слова разгаданы. Дальше будет чуть сложнее."
+        : `Все слова разгаданы. На следующем уровне будет ${getHintLimit(state.level + 1)} ${formatHints(getHintLimit(state.level + 1))}.`;
+    completion.hidden = false;
+    showToast("Найс, всё разгадано");
+  }
+
+  function hideCompletion() {
+    completion.hidden = true;
   }
 
   function renderAnswerPreview(clue) {
@@ -421,11 +453,17 @@
       showToast("В этом слове уже всё верно");
       return;
     }
+    if (state.hintsRemaining <= 0) {
+      showToast("Подсказки закончились");
+      haptic("notification", "error");
+      return;
+    }
 
     const key = cellKey(target);
     state.entries[key] = state.puzzle.grid[target.row][target.col].letter;
     state.selectedCellKey = key;
     state.checkedCells.set(key, "correct");
+    state.hintsRemaining -= 1;
     haptic("impact", "light");
     render();
   }
@@ -522,6 +560,14 @@
     if (tail === 1) return "ошибка";
     if (tail >= 2 && tail <= 4) return "ошибки";
     return "ошибок";
+  }
+
+  function formatHints(count) {
+    const tail = count % 10;
+    if (count > 10 && count < 20) return "подсказок";
+    if (tail === 1) return "подсказка";
+    if (tail >= 2 && tail <= 4) return "подсказки";
+    return "подсказок";
   }
 
   function showToast(message) {

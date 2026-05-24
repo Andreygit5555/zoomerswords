@@ -28,16 +28,16 @@
 
       <section class="status-strip" aria-label="Статус игры">
         <div>
-          <span class="status-value" id="solvedCount">0</span>
-          <span class="status-label">решено</span>
+          <span class="status-value" id="levelCount">1</span>
+          <span class="status-label">уровень</span>
         </div>
         <div>
-          <span class="status-value" id="totalCount">0</span>
+          <span class="status-value" id="solvedCount">0</span>
           <span class="status-label">слов</span>
         </div>
         <div>
-          <span class="status-value" id="mistakesCount">0</span>
-          <span class="status-label">ошибок</span>
+          <span class="status-value" id="hintsCount">20</span>
+          <span class="status-label">подсказок</span>
         </div>
       </section>
 
@@ -73,6 +73,17 @@
       </section>
 
       <section class="keyboard" id="keyboard" aria-label="Клавиатура"></section>
+
+      <div class="completion" id="completion" hidden>
+        <div class="completion-card" role="dialog" aria-modal="true" aria-labelledby="completionTitle">
+          <p id="completionLevel">Уровень 1</p>
+          <h2 id="completionTitle">Найс!</h2>
+          <p id="completionText">Все слова разгаданы. Дальше будет чуть сложнее.</p>
+          <button class="primary-button next-button" id="nextPuzzleButton" type="button">
+            Следующий сканворд
+          </button>
+        </div>
+      </div>
 
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
     </main>
