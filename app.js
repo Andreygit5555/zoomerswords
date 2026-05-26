@@ -504,8 +504,10 @@
     }
 
     const key = cellKey(target);
+    const targetIndex = clue.cells.findIndex((cell) => cellKey(cell) === key);
+    const nextCell = clue.cells[targetIndex + 1];
     state.entries[key] = state.puzzle.grid[target.row][target.col].letter;
-    state.selectedCellKey = key;
+    state.selectedCellKey = nextCell ? cellKey(nextCell) : key;
     state.checkedCells.set(key, "correct");
     state.hintsRemaining -= 1;
     haptic("impact", "light");
