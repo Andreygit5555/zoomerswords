@@ -13,23 +13,29 @@
     <main class="app-shell" id="app">
       <header class="topbar">
         <div>
-          <p class="app-label">мини-сканворд</p>
-          <h1>Зумерские слова</h1>
+          <p class="app-label" id="appLabel">мини-сканворд</p>
+          <h1 id="appTitle">Зумерские слова</h1>
         </div>
       </header>
 
-      <section class="status-strip" aria-label="Статус игры">
+      <section class="status-strip" id="statusStrip" aria-label="Статус игры">
         <div>
           <span class="status-value" id="levelCount">1</span>
-          <span class="status-label">уровень</span>
+          <span class="status-label" id="levelLabel">уровень</span>
         </div>
         <div>
           <span class="status-value" id="solvedCount">0</span>
-          <span class="status-label">слов</span>
+          <span class="status-label" id="wordsLabel">слов</span>
         </div>
         <div>
           <span class="status-value" id="hintsCount">20</span>
-          <span class="status-label">подсказок</span>
+          <span class="status-label" id="hintsLabel">подсказок</span>
+        </div>
+        <div class="language-card">
+          <button class="language-toggle" id="languageToggle" type="button" aria-label="Сменить язык">
+            <span class="status-value" id="languageValue">RU</span>
+            <span class="status-label" id="languageLabel">язык</span>
+          </button>
         </div>
       </section>
 
@@ -53,13 +59,13 @@
               <path d="M10 22h4" />
               <path d="M8.2 14.5a6 6 0 1 1 7.6 0c-.9.7-1.3 1.5-1.3 2.5h-5c0-1-.4-1.8-1.3-2.5Z" />
             </svg>
-            Буква
+            <span id="hintButtonText">Буква</span>
           </button>
           <button class="primary-button" id="checkButton" type="button">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M20 6 9 17l-5-5" />
             </svg>
-            Проверить
+            <span id="checkButtonText">Проверить</span>
           </button>
         </div>
       </section>
@@ -72,7 +78,7 @@
           <h2 id="completionTitle">Найс!</h2>
           <p id="completionText">Все слова разгаданы. Дальше будет чуть сложнее.</p>
           <button class="primary-button next-button" id="nextPuzzleButton" type="button">
-            Следующий сканворд
+            <span id="nextPuzzleButtonText">Следующий сканворд</span>
           </button>
         </div>
       </div>
@@ -81,6 +87,7 @@
     </main>
 
     <script src="./slang-data.js"></script>
+    <script src="./slang-data-en.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>

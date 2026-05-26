@@ -23,13 +23,117 @@
   const START_HINTS = 20;
   const HINT_STEP = 2;
   const MIN_HINTS = 4;
-  const LETTERS = "ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ".split("");
-  const data = (window.ZOOMER_WORDS || [])
-    .map((item) => ({
-      ...item,
-      answer: normalizeAnswer(item.word),
-    }))
-    .filter((item) => item.answer.length >= 4 && item.answer.length <= 9);
+  const LANGUAGE_STORAGE_KEY = "zoomer-scanword-language";
+  const LANGUAGE_CONFIG = {
+    ru: {
+      value: "RU",
+      minLength: 4,
+      alphabet: "ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ".split(""),
+      keyboardRows: [
+        { letters: "ЙЦУКЕНГШЩЗХ" },
+        { letters: "ФЫВАПРОЛДЖЭ" },
+        { letters: "ЯЧСМИТЬБЮ", backspace: true },
+      ],
+      fallback: [
+        { word: "вайб", definition: "атмосфера, настроение, ощущение от чего-то", category: "Эмоции" },
+        { word: "краш", definition: "объект сильной симпатии, влюблённости", category: "Эмоции" },
+        { word: "чилл", definition: "расслабление, спокойствие", category: "Эмоции" },
+        { word: "имба", definition: "что-то слишком сильное или хорошее", category: "Гейминг" },
+        { word: "рофл", definition: "шутка, смех, прикол", category: "Общение" },
+      ],
+      ui: {
+        htmlLang: "ru",
+        title: "Зумерские слова",
+        documentTitle: "Зумер-сканворд",
+        appLabel: "мини-сканворд",
+        statusAria: "Статус игры",
+        levelLabel: "уровень",
+        wordsLabel: "слов",
+        hintsLabel: "подсказок",
+        languageLabel: "язык",
+        languageAria: "Switch to English",
+        boardAria: "Игровое поле",
+        answerAria: "Текущее слово",
+        defaultClue: "Выберите подсказку на поле.",
+        across: "вправо",
+        down: "вниз",
+        hintButton: "Буква",
+        checkButton: "Проверить",
+        doneButton: "готово",
+        erase: "Стереть",
+        nextPuzzle: "Следующий сканворд",
+        completionTitle: "Найс!",
+        completionFirst: "Все слова разгаданы. Дальше будет чуть сложнее.",
+        completionNext: (hints) => `Все слова разгаданы. На следующем уровне будет ${hints} ${formatHints(hints)}.`,
+        levelTitle: "Уровень",
+        levelToast: (level) => `Уровень ${level}`,
+        newPuzzleToast: "Новая сетка готова",
+        languageToast: "Русская версия",
+        alreadyCorrect: "В этом слове уже всё верно",
+        noHints: "Подсказки закончились",
+        wordSolved: "Есть!",
+        allSolved: "Найс, всё разгадано",
+        typeLetters: "Сначала впишите пару букв",
+        allCorrect: "Пока всё правильно",
+      },
+    },
+    en: {
+      value: "EN",
+      minLength: 3,
+      alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""),
+      keyboardRows: [
+        { letters: "QWERTYUIOP" },
+        { letters: "ASDFGHJKL" },
+        { letters: "ZXCVBNM", backspace: true },
+      ],
+      fallback: [
+        { word: "vibe", definition: "A feeling, mood, or overall energy", category: "Mood" },
+        { word: "crush", definition: "Someone you are romantically interested in", category: "People" },
+        { word: "chill", definition: "Relaxed, calm, or easygoing", category: "Mood" },
+        { word: "rizz", definition: "Charm or flirting ability", category: "Dating" },
+        { word: "slay", definition: "To do something exceptionally well", category: "Reactions" },
+      ],
+      ui: {
+        htmlLang: "en",
+        title: "Gen Z Words",
+        documentTitle: "Gen Z Crossword",
+        appLabel: "mini crossword",
+        statusAria: "Game status",
+        levelLabel: "level",
+        wordsLabel: "words",
+        hintsLabel: "hints",
+        languageLabel: "lang",
+        languageAria: "Переключить на русский",
+        boardAria: "Game board",
+        answerAria: "Current word",
+        defaultClue: "Pick a clue on the board.",
+        across: "across",
+        down: "down",
+        hintButton: "Letter",
+        checkButton: "Check",
+        doneButton: "done",
+        erase: "Erase",
+        nextPuzzle: "Next crossword",
+        completionTitle: "Nice!",
+        completionFirst: "All words solved. The next one gets a bit harder.",
+        completionNext: (hints) => `All words solved. Next level has ${hints} ${formatHints(hints)}.`,
+        levelTitle: "Level",
+        levelToast: (level) => `Level ${level}`,
+        newPuzzleToast: "New grid ready",
+        languageToast: "English version",
+        alreadyCorrect: "This word is already correct",
+        noHints: "No hints left",
+        wordSolved: "Got it!",
+        allSolved: "Nice, all solved",
+        typeLetters: "Type a few letters first",
+        allCorrect: "Everything is correct so far",
+      },
+    },
+  };
+  const datasets = {
+    ru: createDataset(window.ZOOMER_WORDS || [], "ru"),
+    en: createDataset(window.ZOOMER_WORDS_EN || [], "en"),
+  };
 
   const state = {
     puzzle: null,
@@ -40,6 +144,7 @@
     solvedClueIds: new Set(),
     celebratingClueId: null,
     autoAdvanceTimer: null,
+    lang: getInitialLanguage(),
     level: 1,
     hintsRemaining: START_HINTS,
     mistakes: 0,
@@ -47,29 +152,45 @@
 
   const board = document.getElementById("board");
   const keyboard = document.getElementById("keyboard");
+  const appLabel = document.getElementById("appLabel");
+  const appTitle = document.getElementById("appTitle");
+  const statusStrip = document.getElementById("statusStrip");
   const levelCount = document.getElementById("levelCount");
   const solvedCount = document.getElementById("solvedCount");
   const hintsCount = document.getElementById("hintsCount");
+  const levelLabel = document.getElementById("levelLabel");
+  const wordsLabel = document.getElementById("wordsLabel");
+  const hintsLabel = document.getElementById("hintsLabel");
+  const languageToggle = document.getElementById("languageToggle");
+  const languageValue = document.getElementById("languageValue");
+  const languageLabel = document.getElementById("languageLabel");
   const clueNumber = document.getElementById("clueNumber");
   const clueDirection = document.getElementById("clueDirection");
   const clueLength = document.getElementById("clueLength");
   const clueCategory = document.getElementById("clueCategory");
   const answerPreview = document.getElementById("answerPreview");
   const clueText = document.getElementById("clueText");
+  const checkButton = document.getElementById("checkButton");
   const hintButton = document.getElementById("hintButton");
+  const hintButtonText = document.getElementById("hintButtonText");
+  const checkButtonText = document.getElementById("checkButtonText");
   const completion = document.getElementById("completion");
   const completionLevel = document.getElementById("completionLevel");
+  const completionTitle = document.getElementById("completionTitle");
   const completionText = document.getElementById("completionText");
+  const nextPuzzleButtonText = document.getElementById("nextPuzzleButtonText");
   const toast = document.getElementById("toast");
 
-  document.getElementById("checkButton").addEventListener("click", checkPuzzle);
+  checkButton.addEventListener("click", checkPuzzle);
   hintButton.addEventListener("click", revealLetter);
+  languageToggle.addEventListener("click", toggleLanguage);
   document.getElementById("nextPuzzleButton").addEventListener("click", () => startNewGame({ nextLevel: true }));
   document.addEventListener("keydown", onHardwareKey);
   document.addEventListener("dblclick", preventViewportZoom, { passive: false });
   document.addEventListener("gesturestart", preventViewportZoom, { passive: false });
   document.addEventListener("gesturechange", preventViewportZoom, { passive: false });
 
+  applyLocale();
   buildKeyboard();
   startNewGame();
 
@@ -92,22 +213,82 @@
     document.documentElement.style.setProperty("--tg-viewport-height", `${tg.viewportStableHeight}px`);
   }
 
-  function normalizeAnswer(value) {
-    return String(value || "")
-      .trim()
-      .replace(/ё/gi, "е")
-      .toUpperCase()
-      .replace(/[^А-Я]/g, "");
+  function getInitialLanguage() {
+    try {
+      const stored = window.localStorage && window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+      if (stored && LANGUAGE_CONFIG[stored]) return stored;
+    } catch (error) {
+      console.info("Language preference is not available", error);
+    }
+    return "ru";
+  }
+
+  function createDataset(source, lang) {
+    const minLength = LANGUAGE_CONFIG[lang].minLength;
+    return source
+      .map((item) => ({
+        ...item,
+        answer: normalizeAnswer(item.word, lang),
+      }))
+      .filter((item) => item.answer.length >= minLength && item.answer.length <= 9);
+  }
+
+  function getUi() {
+    return LANGUAGE_CONFIG[state.lang].ui;
+  }
+
+  function getLanguageData() {
+    return datasets[state.lang].length ? datasets[state.lang] : createDataset(LANGUAGE_CONFIG[state.lang].fallback, state.lang);
+  }
+
+  function applyLocale() {
+    const ui = getUi();
+    document.documentElement.lang = ui.htmlLang;
+    document.title = ui.documentTitle;
+    appLabel.textContent = ui.appLabel;
+    appTitle.textContent = ui.title;
+    statusStrip.setAttribute("aria-label", ui.statusAria);
+    board.parentElement.setAttribute("aria-label", ui.boardAria);
+    answerPreview.setAttribute("aria-label", ui.answerAria);
+    levelLabel.textContent = ui.levelLabel;
+    wordsLabel.textContent = ui.wordsLabel;
+    hintsLabel.textContent = ui.hintsLabel;
+    languageValue.textContent = LANGUAGE_CONFIG[state.lang].value;
+    languageLabel.textContent = ui.languageLabel;
+    languageToggle.setAttribute("aria-label", ui.languageAria);
+    hintButtonText.textContent = ui.hintButton;
+    checkButtonText.textContent = ui.checkButton;
+    nextPuzzleButtonText.textContent = ui.nextPuzzle;
+  }
+
+  function toggleLanguage() {
+    state.lang = state.lang === "ru" ? "en" : "ru";
+    state.level = 1;
+    try {
+      window.localStorage && window.localStorage.setItem(LANGUAGE_STORAGE_KEY, state.lang);
+    } catch (error) {
+      console.info("Language preference could not be saved", error);
+    }
+    applyLocale();
+    buildKeyboard();
+    startNewGame({ languageSwitch: true });
+  }
+
+  function normalizeAnswer(value, lang = "ru") {
+    const raw = String(value || "").trim();
+    if (lang === "en") {
+      return raw
+        .normalize("NFKD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase()
+        .replace(/[^A-Z]/g, "");
+    }
+    return raw.replace(/ё/gi, "е").toUpperCase().replace(/[^А-Я]/g, "");
   }
 
   function buildKeyboard() {
     keyboard.innerHTML = "";
-    const rows = [
-      { letters: "ЙЦУКЕНГШЩЗХ" },
-      { letters: "ФЫВАПРОЛДЖЭ" },
-      { letters: "ЯЧСМИТЬБЮ", backspace: true },
-    ];
-    rows.forEach(({ letters, backspace }) => {
+    LANGUAGE_CONFIG[state.lang].keyboardRows.forEach(({ letters, backspace }) => {
       const row = document.createElement("div");
       row.className = "key-row";
       row.style.setProperty("--cols", letters.length + (backspace ? 1 : 0));
@@ -130,7 +311,7 @@
     const check = document.createElement("button");
     check.type = "button";
     check.className = "key wide accent";
-    check.textContent = "готово";
+    check.textContent = getUi().doneButton;
     check.addEventListener("click", checkPuzzle);
     actions.appendChild(check);
     keyboard.appendChild(actions);
@@ -140,8 +321,8 @@
     const button = document.createElement("button");
     button.type = "button";
     button.className = "key backspace-key";
-    button.setAttribute("aria-label", "Стереть");
-    button.title = "Стереть";
+    button.setAttribute("aria-label", getUi().erase);
+    button.title = getUi().erase;
     button.innerHTML = `
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M21 5H9l-6 7 6 7h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z" />
@@ -154,6 +335,7 @@
   }
 
   function startNewGame(options = {}) {
+    const ui = getUi();
     if (options.nextLevel) state.level += 1;
     state.puzzle = createPuzzle();
     state.entries = {};
@@ -168,12 +350,13 @@
     state.selectedCellKey = cellKey(state.puzzle.clues[0].cells[0]);
     hideCompletion();
     render();
-    showToast(options.nextLevel ? `Уровень ${state.level}` : "Новая сетка готова");
+    if (options.languageSwitch) showToast(ui.languageToast);
+    else showToast(options.nextLevel ? ui.levelToast(state.level) : ui.newPuzzleToast);
   }
 
   function createPuzzle() {
     for (let attempt = 0; attempt < 90; attempt += 1) {
-      const items = shuffle(data).filter((item) => item.answer.length <= 8);
+      const items = shuffle(getLanguageData()).filter((item) => item.answer.length <= 8);
       const grid = createGrid();
       const clues = [];
       const first = items.find((item) => item.answer.length >= 5 && item.answer.length <= 7) || items[0];
@@ -302,13 +485,7 @@
   }
 
   function createFallbackPuzzle() {
-    const fallback = [
-      { word: "вайб", definition: "атмосфера, настроение, ощущение от чего-то", category: "Эмоции" },
-      { word: "краш", definition: "объект сильной симпатии, влюблённости", category: "Эмоции" },
-      { word: "чилл", definition: "расслабление, спокойствие", category: "Эмоции" },
-      { word: "имба", definition: "что-то слишком сильное или хорошее", category: "Гейминг" },
-      { word: "рофл", definition: "шутка, смех, прикол", category: "Общение" },
-    ].map((item) => ({ ...item, answer: normalizeAnswer(item.word) }));
+    const fallback = createDataset(LANGUAGE_CONFIG[state.lang].fallback, state.lang);
     const grid = createGrid();
     const clues = [];
     placeWord(grid, clues, fallback[0], 2, 2, "across");
@@ -371,11 +548,12 @@
   function renderClue() {
     const clue = getActiveClue();
     if (!clue) return;
+    const ui = getUi();
     clueNumber.textContent = String(clue.number);
-    clueDirection.textContent = clue.direction === "across" ? "вправо" : "вниз";
+    clueDirection.textContent = clue.direction === "across" ? ui.across : ui.down;
     clueLength.textContent = formatLetters(clue.answer.length);
     clueCategory.textContent = clue.category;
-    clueText.textContent = clue.definition;
+    clueText.textContent = clue.definition || ui.defaultClue;
     renderAnswerPreview(clue);
   }
 
@@ -398,13 +576,13 @@
   }
 
   function showCompletion() {
-    completionLevel.textContent = `Уровень ${state.level}`;
-    completionText.textContent =
-      state.level === 1
-        ? "Все слова разгаданы. Дальше будет чуть сложнее."
-        : `Все слова разгаданы. На следующем уровне будет ${getHintLimit(state.level + 1)} ${formatHints(getHintLimit(state.level + 1))}.`;
+    const ui = getUi();
+    const nextHints = getHintLimit(state.level + 1);
+    completionLevel.textContent = `${ui.levelTitle} ${state.level}`;
+    completionTitle.textContent = ui.completionTitle;
+    completionText.textContent = state.level === 1 ? ui.completionFirst : ui.completionNext(nextHints);
     completion.hidden = false;
-    showToast("Найс, всё разгадано");
+    showToast(ui.allSolved);
   }
 
   function hideCompletion() {
@@ -454,7 +632,7 @@
   function enterLetter(letter) {
     const clue = getActiveClue();
     if (!clue || !state.selectedCellKey) return;
-    const normalizedLetter = normalizeAnswer(letter);
+    const normalizedLetter = normalizeAnswer(letter, state.lang);
     const [row, col] = state.selectedCellKey.split(":").map(Number);
     const targetCell = state.puzzle.grid[row][col];
     if (state.entries[state.selectedCellKey] !== normalizedLetter) {
@@ -488,17 +666,18 @@
 
   function revealLetter() {
     const clue = getActiveClue();
+    const ui = getUi();
     if (!clue) return;
     const target = clue.cells.find((cell) => {
       const key = cellKey(cell);
       return state.entries[key] !== state.puzzle.grid[cell.row][cell.col].letter;
     });
     if (!target) {
-      showToast("В этом слове уже всё верно");
+      showToast(ui.alreadyCorrect);
       return;
     }
     if (state.hintsRemaining <= 0) {
-      showToast("Подсказки закончились");
+      showToast(ui.noHints);
       haptic("notification", "error");
       return;
     }
@@ -523,7 +702,7 @@
     state.solvedClueIds.add(clue.id);
     state.celebratingClueId = clue.id;
     clue.cells.forEach((cell) => state.checkedCells.set(cellKey(cell), "correct"));
-    showToast("Есть!");
+    showToast(getUi().wordSolved);
     haptic("notification", "success");
     render();
 
@@ -556,6 +735,7 @@
   }
 
   function checkPuzzle() {
+    const ui = getUi();
     let wrong = 0;
     let filled = 0;
     state.checkedCells.clear();
@@ -573,7 +753,7 @@
     });
 
     if (!filled) {
-      showToast("Сначала впишите пару букв");
+      showToast(ui.typeLetters);
       return;
     }
 
@@ -582,7 +762,7 @@
       showToast(`${wrong} ${formatMistakes(wrong)}`);
       haptic("notification", "error");
     } else {
-      showToast("Пока всё правильно");
+      showToast(ui.allCorrect);
       haptic("notification", "success");
     }
 
@@ -597,8 +777,8 @@
       return;
     }
 
-    const letter = normalizeAnswer(raw);
-    if (letter.length === 1 && LETTERS.includes(letter)) {
+    const letter = normalizeAnswer(raw, state.lang);
+    if (letter.length === 1 && LANGUAGE_CONFIG[state.lang].alphabet.includes(letter)) {
       event.preventDefault();
       enterLetter(letter);
     }
@@ -638,6 +818,7 @@
   }
 
   function formatLetters(count) {
+    if (state.lang === "en") return `${count} ${count === 1 ? "letter" : "letters"}`;
     const tail = count % 10;
     if (count > 10 && count < 20) return `${count} букв`;
     if (tail === 1) return `${count} буква`;
@@ -646,6 +827,7 @@
   }
 
   function formatMistakes(count) {
+    if (state.lang === "en") return count === 1 ? "mistake" : "mistakes";
     const tail = count % 10;
     if (count > 10 && count < 20) return "ошибок";
     if (tail === 1) return "ошибка";
@@ -654,6 +836,7 @@
   }
 
   function formatHints(count) {
+    if (state.lang === "en") return count === 1 ? "hint" : "hints";
     const tail = count % 10;
     if (count > 10 && count < 20) return "подсказок";
     if (tail === 1) return "подсказка";
