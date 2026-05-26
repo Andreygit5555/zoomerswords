@@ -63,9 +63,16 @@
   hintButton.addEventListener("click", revealLetter);
   document.getElementById("nextPuzzleButton").addEventListener("click", () => startNewGame({ nextLevel: true }));
   document.addEventListener("keydown", onHardwareKey);
+  document.addEventListener("dblclick", preventViewportZoom, { passive: false });
+  document.addEventListener("gesturestart", preventViewportZoom, { passive: false });
+  document.addEventListener("gesturechange", preventViewportZoom, { passive: false });
 
   buildKeyboard();
   startNewGame();
+
+  function preventViewportZoom(event) {
+    event.preventDefault();
+  }
 
   function requestTelegramFullscreen() {
     if (!tg || typeof tg.requestFullscreen !== "function") return;
