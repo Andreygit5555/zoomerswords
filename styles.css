@@ -96,8 +96,17 @@ h1 {
 }
 
 .telegram-webapp .topbar {
-  min-height: 104px;
-  padding-top: 56px;
+  min-height: 52px;
+  padding: 2px 84px 0;
+}
+
+.telegram-webapp .app-label {
+  display: none;
+}
+
+.telegram-webapp h1 {
+  font-size: 25px;
+  line-height: 1;
 }
 
 .icon-button,
