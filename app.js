@@ -1,6 +1,7 @@
 (function () {
   const tg = window.Telegram && window.Telegram.WebApp;
   if (tg) {
+    document.documentElement.classList.add("telegram-webapp");
     tg.ready();
     tg.expand();
     requestTelegramFullscreen();
