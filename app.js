@@ -430,8 +430,7 @@
   function selectClue(clueId) {
     const clue = state.puzzle.clues.find((item) => item.id === clueId);
     state.selectedClueId = clueId;
-    const firstEmpty = clue.cells.find((cell) => !state.entries[cellKey(cell)]) || clue.cells[0];
-    state.selectedCellKey = cellKey(firstEmpty);
+    state.selectedCellKey = cellKey(clue.cells[0]);
     state.celebratingClueId = null;
     clearTimeout(state.autoAdvanceTimer);
     state.checkedCells.clear();
@@ -455,11 +454,17 @@
   function enterLetter(letter) {
     const clue = getActiveClue();
     if (!clue || !state.selectedCellKey) return;
-    state.entries[state.selectedCellKey] = normalizeAnswer(letter);
+    const normalizedLetter = normalizeAnswer(letter);
+    const [row, col] = state.selectedCellKey.split(":").map(Number);
+    const targetCell = state.puzzle.grid[row][col];
+    if (state.entries[state.selectedCellKey] !== normalizedLetter) {
+      targetCell.clueIds.forEach((clueId) => state.solvedClueIds.delete(clueId));
+    }
+    state.entries[state.selectedCellKey] = normalizedLetter;
     state.checkedCells.delete(state.selectedCellKey);
 
     const currentIndex = clue.cells.findIndex((cell) => cellKey(cell) === state.selectedCellKey);
-    const next = clue.cells.slice(currentIndex + 1).find((cell) => !state.entries[cellKey(cell)]);
+    const next = clue.cells[currentIndex + 1];
     if (next) state.selectedCellKey = cellKey(next);
     handleSolvedClue(clue);
   }
@@ -543,7 +548,7 @@
     }
 
     state.selectedClueId = next.id;
-    state.selectedCellKey = cellKey(next.cells.find((cell) => !state.entries[cellKey(cell)]) || next.cells[0]);
+    state.selectedCellKey = cellKey(next.cells[0]);
     state.checkedCells.clear();
     render();
   }
