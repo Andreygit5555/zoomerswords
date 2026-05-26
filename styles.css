@@ -240,6 +240,15 @@ svg {
   border-color: #f59a9a;
 }
 
+.cell.letter.celebrate {
+  animation: solved-pop 520ms ease both;
+  background: #dff8eb;
+  border-color: #34b979;
+  box-shadow:
+    0 0 0 2px rgba(23, 163, 107, 0.2),
+    0 8px 18px rgba(23, 163, 107, 0.2);
+}
+
 .cell.clue {
   background: linear-gradient(145deg, #13213b, #1d3159);
   border: 1px solid #16284a;
@@ -340,6 +349,13 @@ svg {
 .answer-slot.correct {
   background: #dff8eb;
   border-color: #7bc9a0;
+}
+
+.answer-slot.celebrate {
+  animation: solved-pop 520ms ease both;
+  background: #dff8eb;
+  border-color: #34b979;
+  box-shadow: 0 0 0 2px rgba(23, 163, 107, 0.16);
 }
 
 #clueText {
@@ -454,6 +470,20 @@ svg {
 .toast.show {
   opacity: 1;
   transform: translate(-50%, 0);
+}
+
+@keyframes solved-pop {
+  0% {
+    transform: scale(1);
+  }
+
+  38% {
+    transform: scale(1.08);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 .completion {

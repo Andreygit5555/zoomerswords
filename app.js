@@ -37,6 +37,9 @@
     selectedCellKey: null,
     entries: {},
     checkedCells: new Map(),
+    solvedClueIds: new Set(),
+    celebratingClueId: null,
+    autoAdvanceTimer: null,
     level: 1,
     hintsRemaining: START_HINTS,
     mistakes: 0,
@@ -155,6 +158,9 @@
     state.puzzle = createPuzzle();
     state.entries = {};
     state.checkedCells = new Map();
+    state.solvedClueIds = new Set();
+    state.celebratingClueId = null;
+    clearTimeout(state.autoAdvanceTimer);
     state.hintsRemaining = getHintLimit(state.level);
     state.mistakes = 0;
     state.completed = false;
@@ -324,6 +330,9 @@
     board.innerHTML = "";
     const activeClue = getActiveClue();
     const activeKeys = new Set((activeClue ? activeClue.cells : []).map(cellKey));
+    const celebrateKeys = new Set(
+      (state.puzzle.clues.find((clue) => clue.id === state.celebratingClueId)?.cells || []).map(cellKey),
+    );
 
     state.puzzle.grid.forEach((row, rowIndex) => {
       row.forEach((cell, colIndex) => {
@@ -339,6 +348,7 @@
           if (state.entries[key]) el.classList.add("filled");
           if (key === state.selectedCellKey) el.classList.add("active");
           if (activeKeys.has(key)) el.classList.add("path");
+          if (celebrateKeys.has(key)) el.classList.add("celebrate");
           if (state.checkedCells.get(key) === "correct") el.classList.add("correct");
           if (state.checkedCells.get(key) === "wrong") el.classList.add("wrong");
           el.addEventListener("click", () => selectCell(rowIndex, colIndex));
@@ -411,6 +421,7 @@
       slot.textContent = state.entries[key] || "";
       slot.classList.toggle("active", key === state.selectedCellKey);
       slot.classList.toggle("correct", state.entries[key] === state.puzzle.grid[cell.row][cell.col].letter);
+      slot.classList.toggle("celebrate", clue.id === state.celebratingClueId);
       slot.addEventListener("click", () => selectCell(cell.row, cell.col));
       answerPreview.appendChild(slot);
     });
@@ -421,6 +432,8 @@
     state.selectedClueId = clueId;
     const firstEmpty = clue.cells.find((cell) => !state.entries[cellKey(cell)]) || clue.cells[0];
     state.selectedCellKey = cellKey(firstEmpty);
+    state.celebratingClueId = null;
+    clearTimeout(state.autoAdvanceTimer);
     state.checkedCells.clear();
     render();
   }
@@ -433,6 +446,8 @@
       state.selectedClueId = cell.clueIds[0];
     }
     state.selectedCellKey = key;
+    state.celebratingClueId = null;
+    clearTimeout(state.autoAdvanceTimer);
     state.checkedCells.clear();
     render();
   }
@@ -446,7 +461,7 @@
     const currentIndex = clue.cells.findIndex((cell) => cellKey(cell) === state.selectedCellKey);
     const next = clue.cells.slice(currentIndex + 1).find((cell) => !state.entries[cellKey(cell)]);
     if (next) state.selectedCellKey = cellKey(next);
-    render();
+    handleSolvedClue(clue);
   }
 
   function eraseLetter() {
@@ -489,6 +504,47 @@
     state.checkedCells.set(key, "correct");
     state.hintsRemaining -= 1;
     haptic("impact", "light");
+    handleSolvedClue(clue);
+  }
+
+  function handleSolvedClue(clue) {
+    if (!isClueFilled(clue) || !isClueSolved(clue) || state.solvedClueIds.has(clue.id)) {
+      render();
+      return;
+    }
+
+    state.solvedClueIds.add(clue.id);
+    state.celebratingClueId = clue.id;
+    clue.cells.forEach((cell) => state.checkedCells.set(cellKey(cell), "correct"));
+    showToast("Есть!");
+    haptic("notification", "success");
+    render();
+
+    clearTimeout(state.autoAdvanceTimer);
+    state.autoAdvanceTimer = setTimeout(() => {
+      if (state.celebratingClueId !== clue.id) return;
+      state.celebratingClueId = null;
+      if (state.completed) {
+        render();
+        return;
+      }
+      selectNextUnsolvedClue(clue.id);
+    }, 520);
+  }
+
+  function selectNextUnsolvedClue(currentClueId) {
+    const clues = state.puzzle.clues;
+    const currentIndex = clues.findIndex((clue) => clue.id === currentClueId);
+    const ordered = [...clues.slice(currentIndex + 1), ...clues.slice(0, currentIndex + 1)];
+    const next = ordered.find((clue) => !isClueSolved(clue));
+    if (!next) {
+      render();
+      return;
+    }
+
+    state.selectedClueId = next.id;
+    state.selectedCellKey = cellKey(next.cells.find((cell) => !state.entries[cellKey(cell)]) || next.cells[0]);
+    state.checkedCells.clear();
     render();
   }
 
@@ -543,6 +599,10 @@
 
   function isClueSolved(clue) {
     return clue.cells.every((cell) => state.entries[cellKey(cell)] === state.puzzle.grid[cell.row][cell.col].letter);
+  }
+
+  function isClueFilled(clue) {
+    return clue.cells.every((cell) => Boolean(state.entries[cellKey(cell)]));
   }
 
   function getActiveClue() {
